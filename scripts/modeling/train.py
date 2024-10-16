@@ -19,22 +19,22 @@ src_train_loader, trg_train_loader = get_data_loader(
     train_data, german_tokenizer, english_tokenizer
 )
 
-EMBED_DIM = 50
-ENCODER_HIDDEN_DIM = 50
-DECODER_HIDDEN_DIM = 50
-ENCODER_HEADS = 1
-DECODER_HEADS = 1
-ENCODER_LAYERS = 1
-DECODER_LAYERS = 1
+embed_dim = 200
+encoder_hidden_dim = 200
+decoder_hidden_dim = 200
+encoder_heads = 4
+decoder_heads = 4
+encoder_layers = 1
+decoder_layers = 1
 
 model = Transformer(
-    EMBED_DIM,
-    ENCODER_HIDDEN_DIM,
-    DECODER_HIDDEN_DIM,
-    ENCODER_HEADS,
-    DECODER_HEADS,
-    ENCODER_LAYERS,
-    DECODER_LAYERS,
+    embed_dim,
+    encoder_hidden_dim,
+    decoder_hidden_dim,
+    encoder_heads,
+    decoder_heads,
+    encoder_layers,
+    decoder_layers,
     src_num_embeddings,
     trg_num_embeddings,
 )
@@ -42,13 +42,13 @@ model = Transformer(
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
-EPOCHS = 1
 criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 optimizer = torch.optim.Adam(model.parameters(), lr=0.003)
 
+epochs = 50
 batches = len(src_train_loader)
 
-for epoch in range(EPOCHS):
+for epoch in range(epochs):
     model.train()
     epoch_loss = 0
     for src_batch, trg_batch in zip(src_train_loader, trg_train_loader):

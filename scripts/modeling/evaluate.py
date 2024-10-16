@@ -16,28 +16,28 @@ src_valid_loader, trg_valid_loader = get_data_loader(
     valid_data, german_tokenizer, english_tokenizer, batch_size=1
 )
 
-EMBED_DIM = 50
-ENCODER_HIDDEN_DIM = 50
-DECODER_HIDDEN_DIM = 50
-ENCODER_HEADS = 1
-DECODER_HEADS = 1
-ENCODER_LAYERS = 1
-DECODER_LAYERS = 1
+embed_dim = 200
+encoder_hidden_dim = 200
+decoder_hidden_dim = 200
+encoder_heads = 4
+decoder_heads = 4
+encoder_layers = 1
+decoder_layers = 1
 
 model = Transformer(
-    EMBED_DIM,
-    ENCODER_HIDDEN_DIM,
-    DECODER_HIDDEN_DIM,
-    ENCODER_HEADS,
-    DECODER_HEADS,
-    ENCODER_LAYERS,
-    DECODER_LAYERS,
+    embed_dim,
+    encoder_hidden_dim,
+    decoder_hidden_dim,
+    encoder_heads,
+    decoder_heads,
+    encoder_layers,
+    decoder_layers,
     src_num_embeddings,
     trg_num_embeddings,
 )
 
-MODEL_NAME = "model_v10-16-2024@10:17:09.pth"
-model.load_state_dict(torch.load(f"models/{MODEL_NAME}"))
+model_name = "model_v10-16-2024@10:17:09.pth"
+model.load_state_dict(torch.load(f"models/{model_name}"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
@@ -45,8 +45,6 @@ EOS = 30523
 
 trans_samples = []
 rouge = Rouge(variants=["L", 3, 2], multiref="best")
-
-valid_data = Dataset.from_dict(read_corpus("data/valid_data.jsonl"))
 
 for src_batch, trg_batch in tqdm(
     zip(src_valid_loader, trg_valid_loader), total=len(src_valid_loader)
@@ -96,6 +94,6 @@ for src_batch, trg_batch in tqdm(
         trans_samples.append((candidate, reference))
 
 results = rouge.compute()
-with open(f"results/results_{MODEL_NAME.strip('.pth')}.txt", "w") as f:
+with open(f"results/results_{model_name.strip('.pth')}.txt", "w") as f:
     for metric, score in results.items():
         f.write(f"{metric}: {score}\n")
