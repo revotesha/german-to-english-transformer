@@ -1,3 +1,4 @@
+import os
 from datasets import Dataset
 from datetime import datetime
 
@@ -6,82 +7,78 @@ from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 
 from model import Transformer
-from utils import generate_square_subsequent_mask
+from utils import generate_square_subsequent_mask, read_corpus, tokenize
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+german_tokenizer = AutoTokenizer.from_pretrained(
+    "dbmdz/bert-base-german-cased", clean_up_tokenization_spaces=True
+)  # casing matters in German
+english_tokenizer = AutoTokenizer.from_pretrained(
+    "bert-base-uncased", clean_up_tokenization_spaces=True
+)
 
-EMBED_DIM = 200
-OUTPUT_DIM = 200
-ENCODER_HEADS = 4
-DECODER_HEADS = 4
+german_tokenizer.add_tokens(["[EOS]"], special_tokens=True)
+english_tokenizer.add_tokens(["[BOS]", "[EOS]"], special_tokens=True)
+
+src_num_embeddings = german_tokenizer.vocab_size + 1  # add [EOS]
+trg_num_embeddings = english_tokenizer.vocab_size + 2  # add [BOS] & [EOS]
+
+EMBED_DIM = 50
+ENCODER_HIDDEN_DIM = 50
+DECODER_HIDDEN_DIM = 50
+ENCODER_HEADS = 1
+DECODER_HEADS = 1
 ENCODER_LAYERS = 1
 DECODER_LAYERS = 1
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = Transformer(
-    EMBED_DIM, OUTPUT_DIM, ENCODER_HEADS, DECODER_HEADS, ENCODER_LAYERS, DECODER_LAYERS
+    EMBED_DIM,
+    ENCODER_HIDDEN_DIM,
+    DECODER_HIDDEN_DIM,
+    ENCODER_HEADS,
+    DECODER_HEADS,
+    ENCODER_LAYERS,
+    DECODER_LAYERS,
+    src_num_embeddings,
+    trg_num_embeddings,
 )
-
 model = model.to(device)
 
-EPOCHS = 81
+EPOCHS = 1
 criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 optimizer = torch.optim.Adam(model.parameters(), lr=0.003)
 
 if __name__ == "__main__":
-    german_tokenizer = AutoTokenizer.from_pretrained(
-        "dbmdz/bert-base-german-cased", clean_up_tokenization_spaces=True
-    )  # casing matters in German
-    english_tokenizer = AutoTokenizer.from_pretrained(
-        "bert-base-uncased", clean_up_tokenization_spaces=True
+    train_data = Dataset.from_dict(read_corpus("data/train_data.jsonl"))
+
+    src_train_data = train_data.map(
+        tokenize,
+        batched=True,
+        fn_kwargs={"tokenizer": german_tokenizer, "language": "german"},
     )
-
-    english_tokenizer.add_tokens(["[BOS]", "[EOS]"], special_tokens=True)
-    german_tokenizer.add_tokens(["[EOS]"], special_tokens=True)
-
-    train_data = Dataset.from_dict(read_corpus("train_data.jsonl"))
-    valid_data = Dataset.from_dict(read_corpus("valid_data.jsonl"))
-
-    src_train_data = train_data.map(german_tokenize, batched=True)
-    trg_train_data = train_data.map(english_tokenize, batched=True)
-    src_valid_data = valid_data.map(german_tokenize, batched=True)
-    trg_valid_data = valid_data.map(english_tokenize, batched=True)
+    trg_train_data = train_data.map(
+        tokenize,
+        batched=True,
+        fn_kwargs={"tokenizer": english_tokenizer, "language": "english"},
+    )
 
     del train_data
-    del valid_data
 
     src_train_data = src_train_data.remove_columns(
-        ["german", "english", "token_type_ids"]
-    )
-    src_valid_data = src_valid_data.remove_columns(
         ["german", "english", "token_type_ids"]
     )
     trg_train_data = trg_train_data.remove_columns(
         ["german", "english", "token_type_ids"]
     )
-    trg_valid_data = trg_valid_data.remove_columns(
-        ["german", "english", "token_type_ids"]
-    )
 
     src_train_data.set_format(type="torch", columns=["input_ids", "attention_mask"])
-    src_valid_data.set_format(type="torch", columns=["input_ids", "attention_mask"])
     trg_train_data.set_format(type="torch", columns=["input_ids", "attention_mask"])
-    trg_valid_data.set_format(type="torch", columns=["input_ids", "attention_mask"])
 
-    src_train_loader = DataLoader(
-        src_train_data, batch_size=128
-    )  # , generator=torch.Generator(device=device))
-    trg_train_loader = DataLoader(
-        trg_train_data, batch_size=128
-    )  # , generator=torch.Generator(device=device))
-    src_valid_loader = DataLoader(
-        src_valid_data, batch_size=1
-    )  # , generator=torch.Generator(device=device))
-    trg_valid_loader = DataLoader(
-        trg_valid_data, batch_size=1
-    )  # , generator=torch.Generator(device=device))
+    src_train_loader = DataLoader(src_train_data, batch_size=128)
+    trg_train_loader = DataLoader(trg_train_data, batch_size=128)
 
-    N = len(src_train_loader)  # number of batches
-    losses = []
+    batches = len(src_train_loader)
+    print("Training...")
     for epoch in range(EPOCHS):
         model.train()
         epoch_loss = 0
@@ -112,10 +109,7 @@ if __name__ == "__main__":
 
             epoch_loss += loss.item()
 
-        losses.append(epoch_loss)
-        print(f"Epoch: {epoch + 1}, Loss: {epoch_loss/N}")
+        print(f"Epoch: {epoch + 1}, Loss: {epoch_loss/batches}")
 
-    torch.save(
-        model.state_dict(),
-        f"../../models/model_v{datetime.now().strftime('%m-%d-%Y@%H:%M:%S')}.pth",
-    )
+    model_path = f"models/model_v{datetime.now().strftime('%m-%d-%Y@%H:%M:%S')}.pth"
+    torch.save(model.state_dict(), model_path)

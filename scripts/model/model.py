@@ -2,8 +2,6 @@ import math
 import torch
 from torch import nn, Tensor
 
-from preprocessing.tokenizers import german_tokenizer, english_tokenizer
-
 
 class PositionalEncoding(nn.Module):
 
@@ -36,17 +34,17 @@ class PositionalEncoding(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self, embed_dim, output_dim, num_heads):
+    def __init__(self, embed_dim, hidden_dim, num_heads):
         super().__init__()
         self.mh_self_attn = nn.MultiheadAttention(
             embed_dim=embed_dim, num_heads=num_heads
         )
         self.dropout = nn.Dropout(0.1)
         self.relu = nn.ReLU()
-        self.linear1 = nn.Linear(embed_dim, output_dim)
-        self.linear2 = nn.Linear(output_dim, embed_dim)
+        self.linear1 = nn.Linear(embed_dim, hidden_dim)
+        self.linear2 = nn.Linear(hidden_dim, embed_dim)
         self.norm1 = nn.LayerNorm(embed_dim)
-        self.norm2 = nn.LayerNorm(output_dim)
+        self.norm2 = nn.LayerNorm(hidden_dim)
         self.norm3 = nn.LayerNorm(embed_dim)
 
     def forward(self, x, src_key_padding_mask, dropout=True):
@@ -59,9 +57,11 @@ class EncoderLayer(nn.Module):
         self_attn_output = self.norm1(self_attn_output)
 
         # Feedforward
-        ff_output = self.relu(self.linear1(self_attn_output))
+        ff_output = self.linear1(self_attn_output)
+        ff_output = self.relu(ff_output)
         ff_output = self.norm2(ff_output)
-        ff_output = self.dropout(ff_output)
+        if dropout:
+            ff_output = self.dropout(ff_output)
         ff_output = self.linear2(ff_output)
 
         # Add attention output to feed forward output and normalize
@@ -72,16 +72,16 @@ class EncoderLayer(nn.Module):
 
 
 class DecoderLayer(nn.Module):
-    def __init__(self, embed_dim, output_dim, num_heads):
+    def __init__(self, embed_dim, hidden_dim, num_heads):
         super().__init__()
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(0.1)
         self.mmh_self_attn = nn.MultiheadAttention(embed_dim, num_heads)
         self.mh_self_attn = nn.MultiheadAttention(embed_dim, num_heads)
-        self.linear1 = nn.Linear(embed_dim, output_dim)
-        self.linear2 = nn.Linear(output_dim, embed_dim)
+        self.linear1 = nn.Linear(embed_dim, hidden_dim)
+        self.linear2 = nn.Linear(hidden_dim, embed_dim)
         self.norm1 = nn.LayerNorm(embed_dim)
-        self.norm2 = nn.LayerNorm(output_dim)
+        self.norm2 = nn.LayerNorm(hidden_dim)
         self.norm3 = nn.LayerNorm(embed_dim)
 
     def forward(
@@ -120,9 +120,11 @@ class DecoderLayer(nn.Module):
         attn_output = self.norm1(attn_output)
 
         # Feedforward
-        ff_output = self.relu(self.linear1(attn_output))
+        ff_output = self.linear1(attn_output)
+        ff_output = self.relu(ff_output)
         ff_output = self.norm2(ff_output)
-        ff_output = self.dropout(ff_output)
+        if dropout:
+            ff_output = self.dropout(ff_output)
         ff_output = self.linear2(ff_output)
 
         # Add x to output and normalize
@@ -136,38 +138,37 @@ class Transformer(nn.Module):
     def __init__(
         self,
         embed_dim,
-        output_dim,
+        encoder_hidden_dim,
+        decoder_hidden_dim,
         encoder_heads,
         decoder_heads,
         encoder_layers,
         decoder_layers,
+        src_num_embeddings,  # german_tokenizer.vocab_size + 1 # add [EOS] to vocab size
+        trg_num_embeddings,  # english_tokenizer.vocab_size + 2 # add [BOS] and [EOS] to vocab size
     ):
         super().__init__()
         self.src_embedding = nn.Embedding(
-            embedding_dim=embed_dim,
-            num_embeddings=german_tokenizer.vocab_size + 1,
-            padding_idx=0,  # add [EOS] to vocab size
+            embedding_dim=embed_dim, num_embeddings=src_num_embeddings, padding_idx=0
         )
         self.trg_embedding = nn.Embedding(
-            embedding_dim=embed_dim,
-            num_embeddings=english_tokenizer.vocab_size + 2,
-            padding_idx=0,  # add [BOS] and [EOS] to vocab size
+            embedding_dim=embed_dim, num_embeddings=trg_num_embeddings, padding_idx=0
         )
         self.pos_encoder = PositionalEncoding(d_model=embed_dim)
 
         self.encoder = nn.ModuleList(
             [
-                EncoderLayer(embed_dim, output_dim, encoder_heads)
+                EncoderLayer(embed_dim, encoder_hidden_dim, encoder_heads)
                 for _ in range(encoder_layers)
             ]
         )
         self.decoder = nn.ModuleList(
             [
-                DecoderLayer(embed_dim, output_dim, decoder_heads)
+                DecoderLayer(embed_dim, decoder_hidden_dim, decoder_heads)
                 for _ in range(decoder_layers)
             ]
         )
-        self.linear = nn.Linear(embed_dim, english_tokenizer.vocab_size + 2)
+        self.linear = nn.Linear(embed_dim, trg_num_embeddings)
         # self.softmax = nn.Softmax(dim=-1)
 
     def forward(
