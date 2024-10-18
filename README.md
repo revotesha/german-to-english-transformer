@@ -12,7 +12,7 @@ You can then either use the notebook `transfomers.ipynb` or run the code in the 
 
 ```
 python3 -m scripts/modeling/train.py # to train
-scripts/modeling/evaluate.py # to evaluate
+python3 -m scripts/modeling/evaluate.py # to evaluate
 ```
 
 To run in a colab terminal (for instance if you want to utilize a colab GPU), add the project directory to the Python path first, like below.
