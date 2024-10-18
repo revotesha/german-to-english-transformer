@@ -144,8 +144,8 @@ class Transformer(nn.Module):
         decoder_heads,
         encoder_layers,
         decoder_layers,
-        src_num_embeddings,  # german_tokenizer.vocab_size + 1 # add [EOS] to vocab size
-        trg_num_embeddings,  # english_tokenizer.vocab_size + 2 # add [BOS] and [EOS] to vocab size
+        src_num_embeddings,
+        trg_num_embeddings,
     ):
         super().__init__()
         self.src_embedding = nn.Embedding(
@@ -169,7 +169,6 @@ class Transformer(nn.Module):
             ]
         )
         self.linear = nn.Linear(embed_dim, trg_num_embeddings)
-        # self.softmax = nn.Softmax(dim=-1)
 
     def forward(
         self,
@@ -184,10 +183,6 @@ class Transformer(nn.Module):
 
         trg_embed = self.trg_embedding(trg_x)
         trg = self.pos_encoder(trg_embed)
-
-        # pos_encoder already does the summation
-        # src = src_embed + src_pos
-        # trg = trg_embed + trg_pos
 
         if not decoder_only:
             src_embed = self.src_embedding(src_x)
