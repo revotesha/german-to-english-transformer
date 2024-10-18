@@ -15,7 +15,7 @@ python3 -m scripts/modeling/train.py # to train
 scripts/modeling/evaluate.py # to evaluate
 ```
 
-To run in a colab terminal (for instance if you want to utilize a colab GPU), add the project directory to the Python first, like below.
+To run in a colab terminal (for instance if you want to utilize a colab GPU), add the project directory to the Python path first, like below.
 
 ```
 export PYTHONPATH="$/env/python:/content/german-to-english-transformer"
