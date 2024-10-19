@@ -6,6 +6,7 @@ from transformers import AutoTokenizer
 
 
 def generate_square_subsequent_mask(sz):
+    # I borrowed this code from the transformers library
     mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
     mask = (
         mask.float()

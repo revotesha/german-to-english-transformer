@@ -1,0 +1,16 @@
+dataset:
+  path: data
+model:
+  embed_dim: 200
+  encoder_hidden_dim: 200
+  decoder_hidden_dim: 200
+  encoder_heads: 4
+  decoder_heads: 4
+  encoder_layers: 1
+  decoder_layers: 1
+training:
+  lr: 0.003
+  epochs: 50
+  model_name: model_v10-18-2024@18:46:49.pth
+eval:
+  rouge_vars: ["L", 4, 3, 2, 1]

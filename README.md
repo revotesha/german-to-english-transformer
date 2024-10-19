@@ -1,26 +1,38 @@
-# German-to-English Transformer Model
+# German-to-English Transformer Model with PyTorch
 
-Personal project to train a German-to-English translation model using transformers. 
+This project trains a transformer-based German-to-English translation model using PyTorch primitives. The code resides in the `scripts/modeling` folder, where `model.py` defines the model class, `train.py` handles training, and `evaluate.py` evaluates the model on a validation set. The current evaluation metric used is the ROUGE score.
 
-To play with the code yourself, install the requirements first. To do so, `cd` into `german-to-english-transformer` and run
+## Running the Code
+To experiment with the code, install the required dependencies first. Navigate to the project directory and install dependencies by running:
 
 ```
+cd german-to-english-transformer
 python3 -m pip install -r requirements.txt
 ```
 
-You can then either use the notebook `transfomers.ipynb` or run the code in the terminal. To run in terminal, use the code below.
+You can then either use the `transformers.ipynb` notebook or run the code in the terminal. To run in the terminal, use the following commands:
 
 ```
-python3 -m scripts/modeling/train.py # to train
-python3 -m scripts/modeling/evaluate.py # to evaluate
+python3 scripts/modeling/train.py  # to train
+python3 scripts/modeling/evaluate.py  # to evaluate
 ```
 
-To run in a colab terminal (for instance if you want to utilize a colab GPU), add the project directory to the Python path first, like below.
+To run the code in a Colab terminal (e.g., to leverage a Colab GPU), first add the project directory to the Python path, as shown below:
 
 ```
 export PYTHONPATH="$/env/python:/content/german-to-english-transformer"
 ```
 
-You can run `echo $PYTHONPATH` to check that the directory has been added. Note that `/env/python` was the existing path before adding `content/german-to-english-transformer`. So you should replace `/env/python` with whatever yours was.
+You can verify the path by running `echo $PYTHONPATH`. Note that `/env/python` represents the existing path before adding `/content/german-to-english-transformer`, so replace `/env/python` with your current path if it's different.
 
-Once you've added the path, you can proceed as normal.
+Once the path is set, proceed as described above. 
+
+Note that `train.py` will save the trained model inside the `models` folder, and `evaluate.py` will save ROUGE score results in the `results` folder.
+
+## Configuration
+The data paths and hyperparameters are configured in `scripts/modeling/config.yaml` and can be modified as necessary. After running `train.py`, the `model_name` in the config file will point to the latest trained model.
+
+## Data
+You can use any dataset in `.jsonl` format. Name your training data `train_data.jsonl` and your validation data `valid_data.jsonl`. Example datasets are available at [training dataset](https://disk.yandex.com/d/2V3YpeogygoBTA) and [validation dataset](https://disk.yandex.com/d/Q6Bm9NoG1VWcgA). Place the data files in the `data` folder.
+
+---
