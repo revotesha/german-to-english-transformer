@@ -1,7 +1,16 @@
+"""
+Training script for model in model.py.
+
+Author: Revo Tesha (https://www.linkedin.com/in/revo-tesha/)
+"""
+
 from datetime import datetime
 
 from datasets import Dataset
+from munch import Munch
+
 import torch
+import yaml
 
 from model import Transformer
 from scripts.preprocessing import (
@@ -11,7 +20,14 @@ from scripts.preprocessing import (
     read_corpus,
 )
 
-train_data = Dataset.from_dict(read_corpus("data/train_data.jsonl"))
+# read configuration - update config.yaml as needed
+with open("scripts/modeling/config.yaml") as file:
+    config = Munch(yaml.safe_load(file))
+
+# data
+train_data = Dataset.from_dict(
+    read_corpus(f"{config.dataset['path']}/train_data.jsonl")
+)
 german_tokenizer, english_tokenizer, src_num_embeddings, trg_num_embeddings = (
     get_tokenizers()
 )
@@ -19,36 +35,32 @@ src_train_loader, trg_train_loader = get_data_loader(
     train_data, german_tokenizer, english_tokenizer
 )
 
-embed_dim = 200
-encoder_hidden_dim = 200
-decoder_hidden_dim = 200
-encoder_heads = 4
-decoder_heads = 4
-encoder_layers = 1
-decoder_layers = 1
-
+# model instantation
+m_config = Munch(config.model)
 model = Transformer(
-    embed_dim,
-    encoder_hidden_dim,
-    decoder_hidden_dim,
-    encoder_heads,
-    decoder_heads,
-    encoder_layers,
-    decoder_layers,
+    m_config.embed_dim,
+    m_config.encoder_hidden_dim,
+    m_config.decoder_hidden_dim,
+    m_config.encoder_heads,
+    m_config.decoder_heads,
+    m_config.encoder_layers,
+    m_config.decoder_layers,
     src_num_embeddings,
     trg_num_embeddings,
 )
 
+# use GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
+# optimizer config
+train_config = Munch(config.training)
 criterion = torch.nn.CrossEntropyLoss(reduction="mean")
-optimizer = torch.optim.Adam(model.parameters(), lr=0.003)
+optimizer = torch.optim.Adam(model.parameters(), lr=train_config.lr)
 
-epochs = 50
+# training
 batches = len(src_train_loader)
-
-for epoch in range(epochs):
+for epoch in range(train_config.epochs):
     model.train()
     epoch_loss = 0
     for src_batch, trg_batch in zip(src_train_loader, trg_train_loader):
@@ -80,5 +92,11 @@ for epoch in range(epochs):
 
     print(f"Epoch: {epoch + 1}, Loss: {epoch_loss/batches}")
 
-model_path = f"models/model_v{datetime.now().strftime('%m-%d-%Y@%H:%M:%S')}.pth"
-torch.save(model.state_dict(), model_path)
+# save trained model to 'models'
+model_name = f"model_v{datetime.now().strftime('%m-%d-%Y@%H:%M:%S')}.pth"
+torch.save(model.state_dict(), f"models/{model_name}")
+
+# update config.yaml with latest model name for eval
+config.training["model_name"] = model_name
+with open("scripts/modeling/config.yaml", "w") as file:
+    yaml.safe_dump(config, file, sort_keys=False)

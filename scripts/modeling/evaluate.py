@@ -1,14 +1,30 @@
+"""
+Script for evaluating model trained with train.py.
+
+Author: Revo Tesha (https://www.linkedin.com/in/revo-tesha/)
+"""
+
 from datasets import Dataset
 from ignite.metrics import Rouge
+from munch import Munch
 
 import random
 import torch
 from tqdm import tqdm
 
+import yaml
+
 from model import Transformer
 from scripts.preprocessing import get_data_loader, get_tokenizers, read_corpus
 
-valid_data = Dataset.from_dict(read_corpus("data/valid_data.jsonl"))
+# read configuration - update config.yaml as needed
+with open("scripts/modeling/config.yaml") as file:
+    config = Munch(yaml.safe_load(file))
+
+# data
+valid_data = Dataset.from_dict(
+    read_corpus(f"{config.dataset['path']}/valid_data.jsonl")
+)
 german_tokenizer, english_tokenizer, src_num_embeddings, trg_num_embeddings = (
     get_tokenizers()
 )
@@ -16,36 +32,30 @@ src_valid_loader, trg_valid_loader = get_data_loader(
     valid_data, german_tokenizer, english_tokenizer, batch_size=1
 )
 
-embed_dim = 200
-encoder_hidden_dim = 200
-decoder_hidden_dim = 200
-encoder_heads = 4
-decoder_heads = 4
-encoder_layers = 1
-decoder_layers = 1
-
+# load model
+m_config = Munch(config.model)
 model = Transformer(
-    embed_dim,
-    encoder_hidden_dim,
-    decoder_hidden_dim,
-    encoder_heads,
-    decoder_heads,
-    encoder_layers,
-    decoder_layers,
+    m_config.embed_dim,
+    m_config.encoder_hidden_dim,
+    m_config.decoder_hidden_dim,
+    m_config.encoder_heads,
+    m_config.decoder_heads,
+    m_config.encoder_layers,
+    m_config.decoder_layers,
     src_num_embeddings,
     trg_num_embeddings,
 )
 
-model_name = "model_v10-16-2024@10:17:09.pth"
+model_name = config.training["model_name"]
 model.load_state_dict(torch.load(f"models/{model_name}"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
-EOS = 30523
+EOS = 30523  # '[EOS]' will be used to stop token generation
+trans_samples = []  # stores sample translations
+rouge = Rouge(variants=config.eval["rouge_vars"], multiref="best")  # metric
 
-trans_samples = []
-rouge = Rouge(variants=["L", 3, 2], multiref="best")
-
+# evaluation
 for src_batch, trg_batch in tqdm(
     zip(src_valid_loader, trg_valid_loader), total=len(src_valid_loader)
 ):
@@ -93,6 +103,7 @@ for src_batch, trg_batch in tqdm(
     if number == 4:
         trans_samples.append((candidate, reference))
 
+# compute rouge and save results in the 'results' folder
 results = rouge.compute()
 with open(f"results/results_{model_name.strip('.pth')}.txt", "w") as f:
     for metric, score in results.items():

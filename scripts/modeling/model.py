@@ -4,7 +4,7 @@ from torch import nn, Tensor
 
 
 class PositionalEncoding(nn.Module):
-
+    # Note: this code was borrowed from the spotpython library
     def __init__(self, d_model: int, max_len: int = 5000) -> None:
         super().__init__()
 
@@ -45,7 +45,6 @@ class EncoderLayer(nn.Module):
         self.linear2 = nn.Linear(hidden_dim, embed_dim)
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(hidden_dim)
-        self.norm3 = nn.LayerNorm(embed_dim)
 
     def forward(self, x, src_key_padding_mask, dropout=True):
         # Multihead self-attention
@@ -66,7 +65,7 @@ class EncoderLayer(nn.Module):
 
         # Add attention output to feed forward output and normalize
         output = ff_output + self_attn_output
-        output = self.norm3(output)
+        output = self.norm1(output)
 
         return output
 
@@ -82,7 +81,6 @@ class DecoderLayer(nn.Module):
         self.linear2 = nn.Linear(hidden_dim, embed_dim)
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(hidden_dim)
-        self.norm3 = nn.LayerNorm(embed_dim)
 
     def forward(
         self,
@@ -129,7 +127,7 @@ class DecoderLayer(nn.Module):
 
         # Add x to output and normalize
         output = ff_output + attn_output
-        output = self.norm3(output)
+        output = self.norm1(output)
 
         return output
 

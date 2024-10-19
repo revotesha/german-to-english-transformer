@@ -1,6 +1,8 @@
 datasets==3.0.1
+munch==4.0.0
 numpy==1.23.5
 pytorch-ignite==0.5.1
+PyYAML==6.0.2
 torch==2.2.2
 tqdm==4.66.5
 transformers==4.45.2
