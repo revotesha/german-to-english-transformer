@@ -1,5 +1,5 @@
 """
-Training script for model in model.py.
+Training script for model defined in model.py.
 
 Author: Revo Tesha (https://www.linkedin.com/in/revo-tesha/)
 """
@@ -24,15 +24,14 @@ from scripts.preprocessing import (
 with open("scripts/modeling/config.yaml") as file:
     config = Munch(yaml.safe_load(file))
 
+print("\nPreparing training data...")
 # data
 train_data = Dataset.from_dict(
     read_corpus(f"{config.dataset['path']}/train_data.jsonl")
 )
-german_tokenizer, english_tokenizer, src_num_embeddings, trg_num_embeddings = (
-    get_tokenizers()
-)
+de_tokenizer, en_tokenizer, src_num_embeddings, trg_num_embeddings = get_tokenizers()
 src_train_loader, trg_train_loader = get_data_loader(
-    train_data, german_tokenizer, english_tokenizer
+    train_data, de_tokenizer, en_tokenizer
 )
 
 # model instantation
@@ -59,6 +58,7 @@ criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 optimizer = torch.optim.Adam(model.parameters(), lr=train_config.lr)
 
 # training
+print("\nTraining...")
 batches = len(src_train_loader)
 for epoch in range(train_config.epochs):
     model.train()
@@ -92,6 +92,7 @@ for epoch in range(train_config.epochs):
 
     print(f"Epoch: {epoch + 1}, Loss: {epoch_loss/batches}")
 
+print("\nSaving model...")
 # save trained model to 'models'
 model_name = f"model_v{datetime.now().strftime('%m-%d-%Y@%H:%M:%S')}.pth"
 torch.save(model.state_dict(), f"models/{model_name}")
@@ -100,3 +101,5 @@ torch.save(model.state_dict(), f"models/{model_name}")
 config.training["model_name"] = model_name
 with open("scripts/modeling/config.yaml", "w") as file:
     yaml.safe_dump(config, file, sort_keys=False)
+
+print("Done! Model saved in the 'models' folder.")

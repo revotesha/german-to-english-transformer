@@ -1,13 +1,20 @@
+"""
+Module with transformer model classes.
+
+Author: Revo Tesha (https://www.linkedin.com/in/revo-tesha/)
+"""
+
 import math
 import torch
+
 from torch import nn, Tensor
+from typing import Union
 
 
 class PositionalEncoding(nn.Module):
     # Note: this code was borrowed from the spotpython library
     def __init__(self, d_model: int, max_len: int = 5000) -> None:
         super().__init__()
-
         position = torch.arange(max_len).unsqueeze(1)
         div_term = torch.exp(
             torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model)
@@ -34,7 +41,7 @@ class PositionalEncoding(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self, embed_dim, hidden_dim, num_heads):
+    def __init__(self, embed_dim: int, hidden_dim: int, num_heads: int) -> None:
         super().__init__()
         self.mh_self_attn = nn.MultiheadAttention(
             embed_dim=embed_dim, num_heads=num_heads
@@ -46,7 +53,9 @@ class EncoderLayer(nn.Module):
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(hidden_dim)
 
-    def forward(self, x, src_key_padding_mask, dropout=True):
+    def forward(
+        self, x: Tensor, src_key_padding_mask: Tensor, dropout: bool = True
+    ) -> Tensor:
         # Multihead self-attention
         self_attn_output, _ = self.mh_self_attn(
             query=x, key=x, value=x, key_padding_mask=src_key_padding_mask
@@ -71,7 +80,7 @@ class EncoderLayer(nn.Module):
 
 
 class DecoderLayer(nn.Module):
-    def __init__(self, embed_dim, hidden_dim, num_heads):
+    def __init__(self, embed_dim: int, hidden_dim: int, num_heads: int) -> None:
         super().__init__()
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(0.1)
@@ -84,13 +93,13 @@ class DecoderLayer(nn.Module):
 
     def forward(
         self,
-        x,
-        encoder_output,
-        trg_key_padding_mask,
-        src_key_padding_mask,
-        trg_attn_mask,
-        dropout=True,
-    ):
+        x: Tensor,
+        encoder_output: Tensor,
+        trg_key_padding_mask: Tensor,
+        src_key_padding_mask: Tensor,
+        trg_attn_mask: Tensor,
+        dropout: bool = True,
+    ) -> Tensor:
         # Masked multihead self-attention
         self_attn_output, _ = self.mmh_self_attn(
             query=x,
@@ -135,16 +144,16 @@ class DecoderLayer(nn.Module):
 class Transformer(nn.Module):
     def __init__(
         self,
-        embed_dim,
-        encoder_hidden_dim,
-        decoder_hidden_dim,
-        encoder_heads,
-        decoder_heads,
-        encoder_layers,
-        decoder_layers,
-        src_num_embeddings,
-        trg_num_embeddings,
-    ):
+        embed_dim: int,
+        encoder_hidden_dim: int,
+        decoder_hidden_dim: int,
+        encoder_heads: int,
+        decoder_heads: int,
+        encoder_layers: int,
+        decoder_layers: int,
+        src_num_embeddings: int,
+        trg_num_embeddings: int,
+    ) -> None:
         super().__init__()
         self.src_embedding = nn.Embedding(
             embedding_dim=embed_dim, num_embeddings=src_num_embeddings, padding_idx=0
@@ -170,14 +179,14 @@ class Transformer(nn.Module):
 
     def forward(
         self,
-        src_x,
-        trg_x,
-        src_key_padding_mask,
-        trg_key_padding_mask,
-        trg_attn_mask=None,
-        decoder_only=False,
-        return_encoder_output=False,
-    ):
+        src_x: Tensor,
+        trg_x: Tensor,
+        src_key_padding_mask: Tensor,
+        trg_key_padding_mask: Tensor,
+        trg_attn_mask: Union[Tensor, None] = None,
+        decoder_only: bool = False,
+        return_encoder_output: bool = False,
+    ) -> Union[Tensor, tuple[Tensor, Tensor]]:
 
         trg_embed = self.trg_embedding(trg_x)
         trg = self.pos_encoder(trg_embed)

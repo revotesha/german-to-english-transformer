@@ -1,6 +1,6 @@
 # German-to-English Transformer Model with PyTorch
 
-This project trains a transformer-based German-to-English translation model using PyTorch primitives. The code resides in the `scripts/modeling` folder, where `model.py` defines the model class, `train.py` handles training, and `evaluate.py` evaluates the model on a validation set. The current evaluation metric used is the ROUGE score.
+This project trains a transformer-based German-to-English translation model using PyTorch primitives. The code resides in the `scripts/modeling` folder, where `model.py` defines the model classes, `train.py` handles training, and `evaluate.py` evaluates the model on a validation set. The current evaluation metric used is the ROUGE score.
 
 ## Running the Code
 To experiment with the code, install the required dependencies first. Navigate to the project directory and install dependencies by running:
