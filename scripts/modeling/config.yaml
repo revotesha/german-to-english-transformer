@@ -11,6 +11,11 @@ model:
 training:
   lr: 0.003
   epochs: 50
-  model_name: model_v10-18-2024@18:46:49.pth
+  model_name: model_v10-20-2024@14:22:41.pth
 eval:
-  rouge_vars: ["L", 4, 3, 2, 1]
+  rouge_vars:
+  - L
+  - 4
+  - 3
+  - 2
+  - 1

@@ -4,14 +4,15 @@ Script for evaluating model trained with train.py.
 Author: Revo Tesha (https://www.linkedin.com/in/revo-tesha/)
 """
 
+import json
+import random
+
 from datasets import Dataset
 from ignite.metrics import Rouge
 from munch import Munch
 
-import random
 import torch
 from tqdm import tqdm
-
 import yaml
 
 from model import Transformer
@@ -22,14 +23,14 @@ with open("scripts/modeling/config.yaml") as file:
     config = Munch(yaml.safe_load(file))
 
 # data
+print("\nPreparing evaluation data...")
 valid_data = Dataset.from_dict(
     read_corpus(f"{config.dataset['path']}/valid_data.jsonl")
 )
-german_tokenizer, english_tokenizer, src_num_embeddings, trg_num_embeddings = (
-    get_tokenizers()
-)
+
+de_tokenizer, en_tokenizer, src_num_embeddings, trg_num_embeddings = get_tokenizers()
 src_valid_loader, trg_valid_loader = get_data_loader(
-    valid_data, german_tokenizer, english_tokenizer, batch_size=1
+    valid_data, de_tokenizer, en_tokenizer, batch_size=1
 )
 
 # load model
@@ -52,9 +53,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 
 EOS = 30523  # '[EOS]' will be used to stop token generation
-trans_samples = []  # stores sample translations
+samples = []  # stores sample translations
 rouge = Rouge(variants=config.eval["rouge_vars"], multiref="best")  # metric
 
+print("\nEvaluating...")
 # evaluation
 for src_batch, trg_batch in tqdm(
     zip(src_valid_loader, trg_valid_loader), total=len(src_valid_loader)
@@ -99,12 +101,25 @@ for src_batch, trg_batch in tqdm(
 
     rouge.update(([candidate], [reference]))
 
-    number = random.randint(0, 64)
-    if number == 4:
-        trans_samples.append((candidate, reference))
+    # randomly select samples for visual inspection
+    sample_prob = 0.1
+    if random.random() < sample_prob:
+        reference = reference[0]
+        candidate = [en_tokenizer.convert_ids_to_tokens(int(id)) for id in candidate]
+        reference = [en_tokenizer.convert_ids_to_tokens(int(id)) for id in reference]
+        samples.append(
+            {"candidate": " ".join(candidate), "reference": " ".join(reference)}
+        )
 
-# compute rouge and save results in the 'results' folder
+print("\nSaving results...")
+# compute rouge and save results to the 'results' folder
 results = rouge.compute()
-with open(f"results/results_{model_name.strip('.pth')}.txt", "w") as f:
+with open(f"results/rscores_{model_name.strip('.pth')}.txt", "w") as f:
     for metric, score in results.items():
         f.write(f"{metric}: {score}\n")
+
+# save samples to the 'results' folder
+with open(f"results/samples_{model_name.strip('.pth')}.jsonl", "w") as f:
+    for item in samples:
+        f.write(json.dumps(item) + "\n")
+print("Done! See results in the 'results' folder.")
