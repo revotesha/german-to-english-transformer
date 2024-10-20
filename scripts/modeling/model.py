@@ -86,6 +86,7 @@ class EncoderLayer(nn.Module):
         self.linear2 = nn.Linear(hidden_dim, embed_dim)
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(hidden_dim)
+        self.norm3 = nn.LayerNorm(embed_dim)
 
     def forward(
         self, x: Tensor, src_key_padding_mask: Tensor, dropout: bool = True
@@ -123,7 +124,7 @@ class EncoderLayer(nn.Module):
 
         # Add attention output to feed forward output and normalize
         output = ff_output + self_attn_output
-        output = self.norm1(output)
+        output = self.norm3(output)
 
         return output
 
@@ -154,7 +155,9 @@ class DecoderLayer(nn.Module):
         self.linear1 = nn.Linear(embed_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, embed_dim)
         self.norm1 = nn.LayerNorm(embed_dim)
-        self.norm2 = nn.LayerNorm(hidden_dim)
+        self.norm2 = nn.LayerNorm(embed_dim)
+        self.norm3 = nn.LayerNorm(hidden_dim)
+        self.norm4 = nn.LayerNorm(embed_dim)
 
     def forward(
         self,
@@ -204,19 +207,19 @@ class DecoderLayer(nn.Module):
 
         # Add encoder-decoder attn output to decoder self-attn ouput and normalize
         attn_output = attn_output + self_attn_output
-        attn_output = self.norm1(attn_output)
+        attn_output = self.norm2(attn_output)
 
         # Feedforward
         ff_output = self.linear1(attn_output)
         ff_output = self.relu(ff_output)
-        ff_output = self.norm2(ff_output)
+        ff_output = self.norm3(ff_output)
         if dropout:
             ff_output = self.dropout(ff_output)
         ff_output = self.linear2(ff_output)
 
         # Add x to output and normalize
         output = ff_output + attn_output
-        output = self.norm1(output)
+        output = self.norm4(output)
 
         return output
 
