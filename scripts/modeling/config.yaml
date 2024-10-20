@@ -1,5 +1,7 @@
 dataset:
   path: data
+  train_batch_size: 128
+  valid_batch_size: 1
 model:
   embed_dim: 200
   encoder_hidden_dim: 200

@@ -30,7 +30,10 @@ valid_data = Dataset.from_dict(
 
 de_tokenizer, en_tokenizer, src_num_embeddings, trg_num_embeddings = get_tokenizers()
 src_valid_loader, trg_valid_loader = get_data_loader(
-    valid_data, de_tokenizer, en_tokenizer, batch_size=1
+    valid_data,
+    de_tokenizer,
+    en_tokenizer,
+    batch_size=config.dataset["valid_batch_size"],
 )
 
 # load model
