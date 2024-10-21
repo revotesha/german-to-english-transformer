@@ -31,7 +31,10 @@ train_data = Dataset.from_dict(
 )
 de_tokenizer, en_tokenizer, src_num_embeddings, trg_num_embeddings = get_tokenizers()
 src_train_loader, trg_train_loader = get_data_loader(
-    train_data, de_tokenizer, en_tokenizer
+    train_data,
+    de_tokenizer,
+    en_tokenizer,
+    batch_size=config.dataset["train_batch_size"],
 )
 
 # model instantation

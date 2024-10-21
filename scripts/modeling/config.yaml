@@ -1,5 +1,7 @@
 dataset:
   path: data
+  train_batch_size: 128
+  valid_batch_size: 1
 model:
   embed_dim: 200
   encoder_hidden_dim: 200
@@ -10,8 +12,8 @@ model:
   decoder_layers: 1
 training:
   lr: 0.003
-  epochs: 50
-  model_name: model_v10-20-2024@14:22:41.pth
+  epochs: 35
+  model_name: model_v10-21-2024@04_29_50.pth
 eval:
   rouge_vars:
   - L
