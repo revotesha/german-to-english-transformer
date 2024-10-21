@@ -69,6 +69,7 @@ for src_batch, trg_batch in tqdm(
     trg_x = trg_batch["input_ids"][:, 0].unsqueeze(0).to(device)
 
     model.eval()
+    # start with '[BOS]' and predict the next token
     output, src_x = model(
         src_x,
         trg_x,
@@ -78,7 +79,9 @@ for src_batch, trg_batch in tqdm(
     )
     output_ids = output.argmax(-1)
 
-    src_seq_length = src_batch["attention_mask"].shape[1]
+    # append predicted token to '[BOS]' and use result to predict next token;
+    # repeat until we've seen '[EOS]' token or we've generated the max # of tokens
+    src_seq_length = src_batch["attention_mask"].shape[1]  # max number of tokens
     for idx in range(src_seq_length):
         trg_x = torch.cat((trg_x, output_ids[idx, :].unsqueeze(0)))
 
@@ -110,9 +113,10 @@ for src_batch, trg_batch in tqdm(
         reference = reference[0]
         candidate = [en_tokenizer.convert_ids_to_tokens(int(id)) for id in candidate]
         reference = [en_tokenizer.convert_ids_to_tokens(int(id)) for id in reference]
-        samples.append(
-            {"candidate": " ".join(candidate), "reference": " ".join(reference)}
-        )
+        # remove the subword artifact '##'
+        candidate = " ".join(candidate).replace(" ##", "")
+        reference = " ".join(reference).replace(" ##", "")
+        samples.append({"candidate": candidate, "reference": reference})
 
 print("\nSaving results...")
 # compute rouge and save results to the 'results' folder
