@@ -3,7 +3,7 @@
 This is code to train a transformer-based German-to-English translation model using PyTorch primitives. The code is in the `scripts/modeling` folder, where `model.py` defines the model classes, `train.py` handles training, and `evaluate.py` evaluates the model on a validation set. The current evaluation metric is the ROUGE score.
 
 ## Running the Code
-To experiment with the code, install dependencies first. I recommend doing this in a virtual environment. To install dependencies, `cd` into `german-to-english-transformer` and run:
+To experiment with the code, install dependencies first. I recommend doing this in a virtual environment and with `Python 3.9+` (Mine is `Python 3.9.6`). To install dependencies, `cd` into `german-to-english-transformer` and run:
 
 ```
 python3 -m pip install -r requirements.txt
