@@ -42,4 +42,3 @@ An example of a trained model is available in the `models` folder. This model wa
 <p align="center">
   <img src="results/loss_model_v10-21-2024@04_29_50.png" />
 </p>
----
