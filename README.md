@@ -36,4 +36,10 @@ The data paths and hyperparameters are configured in `scripts/modeling/config.ya
 ## Data
 You can use any dataset in `.jsonl` format. Name your training data `train_data.jsonl` and your validation data `valid_data.jsonl`. [training dataset](https://disk.yandex.com/d/2V3YpeogygoBTA) and [validation dataset](https://disk.yandex.com/d/Q6Bm9NoG1VWcgA) are examples of data you could use. Place the data files in the `data` folder.
 
+## Trained Model Results
+An example of a trained model is available in the `models` folder. This model was trained using the current settings in the config file. The results for this model, including sample translations, are available in the `results` folder. Below is the training loss graph for the model, which you can also find in the `results` folder.
+
+<p align="center">
+  <img src="results/loss_model_v10-21-2024@04_29_50.png" />
+</p>
 ---
